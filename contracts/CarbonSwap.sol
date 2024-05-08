@@ -29,6 +29,7 @@ contract CCMarketPlace is Ownable, ERC20 {
         otherToken = otherToken_;
     }
 
+    //mod it to have the CC token address not a param but already loaded from storage
     function swapCC(
         address _tokenIn,
         uint _amountIn
@@ -67,6 +68,7 @@ contract CCMarketPlace is Ownable, ERC20 {
         );
     }
 
+    //mod it to have the other token address not a param but already loaded from storage
     function swapOtherToken(
         address _tokenIn,
         uint _amountIn
