@@ -8,33 +8,36 @@
 
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./CC_CertificateToken.sol";
 
-import "./CCToken.sol";
 
 contract CCMarketPlace is Ownable, ERC20 {
     IERC20 public immutable asset;
     IERC20 public immutable otherToken;
+    CC_CertificateToken public Certificate;
 
     uint public assetReserve;
     uint public otherTokenReserve;
 
     constructor(
-        address initialOwner,
+        
         IERC20 asset_,
         IERC20 otherToken_
-    ) Ownable(initialOwner) ERC20("Carbon Corps Liquidity Token", "CCLT") {
+
+    ) Ownable(msg.sender) ERC20("Carbon Corps Liquidity Token", "CCLT") {
         asset = asset_;
         otherToken = otherToken_;
+        Certificate = new CC_CertificateToken();
     }
 
-    //mod it to have the CC token address not a param but already loaded from storage
     function swapCC(
-        address _tokenIn,
+       
         uint _amountIn
     ) external returns (uint amountOut) {
-        require(_tokenIn == address(asset), "invalid asset provided");
+        
         require(_amountIn > 0, "amountIn = 0");
 
         asset.transferFrom(msg.sender, address(this), _amountIn);
@@ -68,12 +71,11 @@ contract CCMarketPlace is Ownable, ERC20 {
         );
     }
 
-    //mod it to have the other token address not a param but already loaded from storage
+    //TODO: add functionality to issue certificate, and burn received tokens
     function swapOtherToken(
-        address _tokenIn,
         uint _amountIn
     ) external returns (uint amountOut) {
-        require(_tokenIn == address(otherToken), "invalid asset provided");
+        
         require(_amountIn > 0, "amountIn = 0");
 
         otherToken.transferFrom(msg.sender, address(this), _amountIn);
@@ -99,7 +101,14 @@ contract CCMarketPlace is Ownable, ERC20 {
             (assetReserve * amountInWithFee) /
             (otherTokenReserve + amountInWithFee);
 
+        //burn mechanism: transfer to buyer, then burn?
         asset.transfer(msg.sender, amountOut);
+
+        //burn CC token
+        asset.transferFrom(msg.sender,address(0), amountOut);
+
+        //mint certificate
+        Certificate.mint(msg.sender, amountOut);
 
         _updateReserves(
             asset.balanceOf(address(this)),
